@@ -1,76 +1,82 @@
-# Nginx Web Server Dockerfile Automation
+# Docker Container Projects for Web Workloads
 
-## Description
-Creating a container image by hand is possible, as shown [here](https://github.com/DimitryZH/handcrafting-container-image), but it requires manual processes. There has to be a more automatic way to build images. Manual processes do not scale and are not easily version controlled. Docker provides a solution to this problem - the Dockerfile. Here I will create a Dockerfile to build an image, and host a static website.
+This repository contains several focused Docker projects that demonstrate different ways to package and run web workloads in containers.
 
-## Implementation
+The emphasis is on practical image design, web server configuration, and patterns that translate directly to Kubernetes and production infrastructure.
 
-Follow these steps to implement the Dockerfile automation:
+## Repository structure
 
-1. Create a new directory:
-   ```bash
-   mkdir newdir
-2. Create a Dockerfile:
-  ```bash
-  touch dockerfile
-  ```
-3. Paste the following commands into the Dockerfile:
-  ```bash
-  nano dockerfile
+```text
+.
+├── ingress-express-nginx/
+├── k8s-php-testapp/
+├── nginx-webserver/
+└── webserver-apache/
 ```
-## Dockerfile
- ```Dockerfile
-# Use Ubuntu 22.04 as the base image for building the application
-FROM ubuntu:22.04 AS builder
 
-# Adding author label to the image
-LABEL author=DimitryZH
+### Project directories
 
-# Install necessary tools
-RUN apt-get update && apt-get install -y git
+- `ingress-express-nginx/` – Node.js Express application designed for Kubernetes Ingress demos, including health checks, inter-service calls to an Nginx backend, and an HTML UI that surfaces pod metadata.
+- `k8s-php-testapp/` – Minimal PHP/Apache HTTP server container that renders the server IP address for debugging and cluster/network testing.
+- `nginx-webserver/` – Multi-stage Ubuntu + Nginx image that clones a static website from GitHub and serves it via Nginx, illustrating image layering and cleanup.
+- `webserver-apache/` – Handcrafted Apache httpd image workflow built entirely with Docker CLI and a running container, showing manual image creation and size optimization.
 
-# Cloning the website code from GitHub repository 
-RUN git clone https://github.com/DimitryZH/content-widget-factory-inc.git /tmp/widget-factory-inc
+## Technologies
 
-# Clean up unnecessary files
-RUN rm -rf /tmp/widget-factory-inc/.git
+- Docker and Docker CLI
+- Node.js and Express
+- PHP and Apache httpd
+- Nginx
+- Ubuntu 22.04 and Amazon Linux 1
+- Git-based content delivery into images
+- Kubernetes-oriented application design (Ingress-ready HTTP workloads)
 
-# Final runtime environment
-FROM ubuntu:22.04
+## Containerization concepts demonstrated
 
-# Install Nginx
-RUN apt-get update && apt-get install -y nginx
+- Dockerfile authoring and multi-stage builds
+- Image layering, cleanup, and size optimization
+- Web server containerization (Apache and Nginx)
+- Environment-driven behavior (for example, `HOSTNAME`, container networking)
+- Patterns for Kubernetes-ready applications: health endpoints, service-to-service HTTP, and external API calls
 
-# Copy website code from the builder stage
-COPY --from=builder /tmp/widget-factory-inc/web /var/www/html
+## Usage
 
-# Setting the working directory
-WORKDIR /var/www/html/
+### Prerequisites
 
-# Clean up unnecessary tools
-RUN apt-get purge -y git && apt-get autoremove -y && apt-get clean
+- Docker installed and configured
+- Optional: Node.js and npm if you want to run the Express app without Docker
 
-# Expose port 80
-EXPOSE 80
-
-# Start Nginx service
-CMD ["nginx", "-g", "daemon off;"]
-```
-Exit from the text editor.
-
-4. Run the command to build an image:
+### Clone the repository
 
 ```bash
-docker build -t dockerfileimage:v01 .
+git clone <this-repo-url>
+cd containerization
 ```
-5. Run container from the image:
-```bash
-docker run -d --name mycontainer -p 8081:80 dockerfileimage:v01
-```
-6. Verify the container running on <SERVER_PUBLIC_IP_ADDRESS>:8081.
-   
-## Results
-Link to the image built can be found in my DockerHub [here](https://hub.docker.com/r/dmitryzhuravlev/dockerfileimage).
 
-## Summary
-This Dockerfile automates the process of building an Nginx web server container image, making it easier to manage and deploy static websites.
+### Build and run examples
+
+From the repository root:
+
+```bash
+# Kubernetes Ingress demo: Express + Nginx
+docker build -t k8s-web-express-nginx ./ingress-express-nginx
+docker run --rm -p 3000:3000 --name k8s-web-express-nginx k8s-web-express-nginx
+
+# PHP test application (server IP visibility)
+docker build -t k8s-php-testapp ./k8s-php-testapp
+docker run --rm -p 8080:80 --name k8s-php-testapp k8s-php-testapp
+
+# Nginx static website (multi-stage build)
+docker build -t nginx-webserver ./nginx-webserver
+docker run --rm -p 8081:80 --name nginx-webserver nginx-webserver
+```
+
+For the Apache handcrafted workflow, follow the scripted steps:
+
+```bash
+cd webserver-apache
+bash bash_script.sh
+```
+
+Refer to each project README for container-specific notes and Kubernetes-oriented usage.
+
